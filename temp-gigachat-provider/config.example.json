@@ -1,0 +1,7 @@
+{
+  "authorization_key": "YOUR_AUTHORIZATION_KEY_HERE",
+  "oauth_url": "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+  "scope": "GIGACHAT_API_PERS",
+  "addr": "localhost",
+  "port": "8080"
+}

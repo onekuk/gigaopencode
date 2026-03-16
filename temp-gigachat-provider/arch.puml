@@ -1,0 +1,48 @@
+@startuml openai-provider-gigachat-architecture
+!include <C4/C4_Container>
+LAYOUT_LEFT_RIGHT()
+
+title OpenAI-compatible Provider для GigaChat - C4 Container Diagram
+
+Person(user, "Пользователь", "Разработчик или CLI Agent (OpenCode, Crush)")
+
+System_Boundary(provider, "OpenAI Provider для GigaChat") {
+    Container(router, "Router", "Go, HTTP Server", "Маршрутизация запросов, CORS middleware, обработка входящих HTTP запросов на :8080/v1")
+
+    Container(handlers, "HTTP Handlers", "Go", "Обработка OpenAI API endpoints: /chat/completions, /completions, /embeddings, /models, /files, /fine-tuning, /images, /audio, /moderations")
+
+    Container(gigachat_provider, "GigaChat Provider", "Go", "Проксирование запросов к GigaChat API, конвертация форматов OpenAI <-> GigaChat, управление HTTP клиентом")
+
+    Container(token_manager, "Token Manager", "Go", "Управление access tokens, автоматическое обновление токенов, OAuth 2.0 клиент")
+
+    Container(logger, "Logger", "Go", "Структурированное логирование (DEBUG, INFO, WARN, ERROR)")
+
+    Container(config, "Config", "JSON", "Конфигурация: authorization_key, oauth_url, scope")
+
+    ContainerDb(converters, "Converters", "Go Package", "Конвертация моделей данных между форматами OpenAI и GigaChat")
+}
+
+System_Ext(gigachat_oauth, "GigaChat OAuth API", "Сбербанк OAuth 2.0: https://ngw.devices.sberbank.ru:9443/api/v2/oauth")
+
+System_Ext(gigachat_api, "GigaChat API", "Сбербанк LLM API: https://gigachat.devices.sberbank.ru/api/v1")
+
+' Relationships
+Rel(user, router, "Отправляет OpenAI-совместимые запросы", "HTTP/JSON")
+
+Rel(router, handlers, "Перенаправляет запросы")
+Rel(handlers, gigachat_provider, "Вызывает методы провайдера")
+Rel(gigachat_provider, converters, "Конвертирует запросы/ответы")
+Rel(gigachat_provider, token_manager, "Получает access token")
+Rel(gigachat_provider, gigachat_api, "Проксирует запросы", "HTTPS/JSON + Bearer token")
+
+Rel(token_manager, gigachat_oauth, "Получает и обновляет токены", "HTTPS + Basic Auth")
+Rel(token_manager, config, "Читает credentials")
+
+Rel(router, logger, "Логирует запросы")
+Rel(handlers, logger, "Логирует обработку")
+Rel(gigachat_provider, logger, "Логирует проксирование")
+Rel(token_manager, logger, "Логирует управление токенами")
+
+SHOW_LEGEND()
+
+@enduml
